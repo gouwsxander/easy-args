@@ -11,8 +11,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>  // used for parsing (atoi, atof)
-#include <string.h>  // used for strcmp
 
+#ifndef EASYARGS_STRCMP
+#include <string.h>
+#define EASYARGS_STRCMP(str1, str2) strcmp(str1, str2)
+#endif
 
 // REQUIRED_ARG(type, name, label, description, parser)
 // label and description should be strings, e.g. "contrast" and "Contrast applied to image"
@@ -156,7 +159,7 @@ static inline int parse_args(int argc, char* argv[], args_t* args) {
 
     // Get optional and boolean arguments
     #define OPTIONAL_ARG(type, name, default, flag, label, description, formatter, parser) \
-    if (!strcmp(argv[i], flag)) { \
+    if (!EASYARGS_STRCMP(argv[i], flag)) { \
         if (i + 1 >= argc) { \
             fprintf(stderr, "Error: option '%s' requires a value.\n", flag); \
             return 0; \
@@ -166,7 +169,7 @@ static inline int parse_args(int argc, char* argv[], args_t* args) {
     }
 
     #define BOOLEAN_ARG(name, flag, description) \
-    if (!strcmp(argv[i], flag)) { \
+    if (!EASYARGS_STRCMP(argv[i], flag)) { \
         args->name = 1; \
         continue; \
     }
