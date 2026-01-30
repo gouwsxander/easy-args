@@ -306,6 +306,9 @@ static inline int parse_args(int argc, char* argv[], args_t* args) {
         return 0;
     }
 
+    int ok;
+    int i = 1;
+
     // Get required arguments
     #ifdef REQUIRED_ARGS
     #define REQUIRED_ARG(type, name, label, description, parser) \
@@ -314,8 +317,6 @@ static inline int parse_args(int argc, char* argv[], args_t* args) {
     if (!ok) \
         return 0;
 
-    int ok;
-    int i = 1;
     REQUIRED_ARGS
     #undef REQUIRED_ARG
     #endif
