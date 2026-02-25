@@ -361,7 +361,7 @@ static inline int parse_args(int argc, char* argv[], args_t* args) {
 
 
 // Display help string, given command used to launch program, e.g., argv[0]
-static inline void print_help(char* exec_alias) {
+static inline void print_help(const char* const restrict exec_alias) {
     // USAGE SECTION
     printf("USAGE:\n");
     printf("    %s ", exec_alias);
