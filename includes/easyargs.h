@@ -20,6 +20,19 @@
 #include <ctype.h>   // used for isspace
 
 
+#define ERROR(msg, ...) do { \
+    fprintf(stderr, msg, ##__VA_ARGS__); \
+    fflush(stderr); \
+} while (0)
+
+#define RETURN_ON(condition, ret_val, msg, ...) do { \
+    if (condition) { \
+        ERROR(msg, ##__VA_ARGS__); \
+        return ret_val; \
+    } \
+} while (0)
+
+
 // REQUIRED_ARG(type, name, label, description, parser)
 // label and description should be strings, e.g. "contrast" and "Contrast applied to image"
 #define REQUIRED_STRING_ARG(name, label, description) REQUIRED_ARG(char*, name, label, description, easyargs_parse_str)
@@ -60,15 +73,8 @@ static inline const char* easyargs_skip_leading(const char *s) {
 static inline char* easyargs_parse_str(const char* text, int* ok) {
     *ok = 0;
 
-    if (!text) {
-        fprintf(stderr, "Error: null string value.\n");
-        return NULL;
-    }
-
-    if (text[0] == '\0') {
-        fprintf(stderr, "Error: empty string value not allowed.\n");
-        return NULL;
-    }
+    RETURN_ON(!text, NULL, "Error: null string value.\n");
+    RETURN_ON(text[0] == '\0', NULL, "Error: empty string value not allowed.\n");
 
     *ok = 1;
     return (char*) text;
@@ -77,14 +83,8 @@ static inline char* easyargs_parse_str(const char* text, int* ok) {
 static inline char easyargs_parse_char(const char* text, int* ok) {
     *ok = 0;
 
-    if (!text) {
-        fprintf(stderr, "Error: null input for character argument.\n");
-        return 0;
-    }
-    if (text[0] == '\0' || text[1] != '\0') {
-        fprintf(stderr, "Error: '%s' is not a valid character.\n", text);
-        return 0;
-    }
+    RETURN_ON(!text, 0, "Error: null input for character argument.\n");
+    RETURN_ON(text[0] == '\0' || text[1] != '\0', 0, "Error: '%s' is not a valid character.\n", text);
 
     *ok = 1;
     return text[0];
@@ -93,30 +93,15 @@ static inline char easyargs_parse_char(const char* text, int* ok) {
 #define DEFINE_UNSIGNED_INTEGER_PARSER(funcname, rettype, maxval, typename) \
 static inline rettype funcname(const char* text, int* ok) { \
     *ok = 0; \
-    if (!text) { \
-        fprintf(stderr, "Error: null input for %s.\n", typename); \
-        return 0; \
-    } \
+    RETURN_ON(!text, 0, "Error: null input for %s.\n", typename); \
     text = easyargs_skip_leading(text); \
-    if (text[0] == '\0') { \
-        fprintf(stderr, "Error: empty input for %s.\n", typename); \
-        return 0; \
-    } \
-    if (text[0] == '-') { \
-        fprintf(stderr, "Error: '%s' negative value not allowed for %s.\n", text, typename); \
-        return 0; \
-    } \
+    RETURN_ON(text[0] == '\0', 0, "Error: empty input for %s.\n", typename); \
+    RETURN_ON(text[0] == '-', 0, "Error: '%s' negative value not allowed for %s.\n", text, typename); \
     char* end; \
     errno = 0; \
     unsigned long long val = strtoull(text, &end, 0); \
-    if (*end != '\0') { \
-        fprintf(stderr, "Error: '%s' is not a valid %s.\n", text, typename); \
-        return 0; \
-    } \
-    if (errno == ERANGE || val > (unsigned long long)(maxval)) { \
-        fprintf(stderr, "Error: '%s' is out of range for %s.\n", text, typename); \
-        return 0; \
-    } \
+    RETURN_ON(*end != '\0', 0, "Error: '%s' is not a valid %s.\n", text, typename); \
+    RETURN_ON(errno == ERANGE || val > (unsigned long long)(maxval), 0, "Error: '%s' is out of range for %s.\n", text, typename); \
     *ok = 1; \
     return (rettype) val; \
 }
@@ -131,26 +116,14 @@ DEFINE_UNSIGNED_INTEGER_PARSER(easyargs_parse_size_t, size_t, SIZE_MAX, "size_t"
 #define DEFINE_SIGNED_INTEGER_PARSER(funcname, rettype, minval, maxval, typename) \
 static inline rettype funcname(const char* text, int* ok) { \
     *ok = 0; \
-    if (!text) { \
-        fprintf(stderr, "Error: null input for %s.\n", typename); \
-        return 0; \
-    } \
+    RETURN_ON(!text, 0, "Error: null input for %s.\n", typename); \
     text = easyargs_skip_leading(text); \
-    if (text[0] == '\0') { \
-        fprintf(stderr, "Error: empty input for %s.\n", typename); \
-        return 0; \
-    } \
+    RETURN_ON(text[0] == '\0', 0, "Error: empty input for %s.\n", typename); \
     char* end; \
     errno = 0; \
     long long val = strtoll(text, &end, 0); \
-    if (*end != '\0') { \
-        fprintf(stderr, "Error: '%s' is not a valid %s.\n", text, typename); \
-        return 0; \
-    } \
-    if (errno == ERANGE || val < (long long)(minval) || val > (long long)(maxval)) { \
-        fprintf(stderr, "Error: '%s' is out of range for %s.\n", text, typename); \
-        return 0; \
-    } \
+    RETURN_ON(*end != '\0', 0, "Error: '%s' is not a valid %s.\n", text, typename); \
+    RETURN_ON(errno == ERANGE || val < (long long)(minval) || val > (long long)(maxval), 0, "Error: '%s' is out of range for %s.\n", text, typename); \
     *ok = 1; \
     return (rettype) val; \
 }
@@ -164,26 +137,18 @@ DEFINE_SIGNED_INTEGER_PARSER(easyargs_parse_llong, long long, LLONG_MIN, LLONG_M
 static inline float easyargs_parse_float(const char* text, int* ok) {
     *ok = 0;
 
-    if (!text) {
-        fprintf(stderr, "Error: null input for float.\n");
-        return 0.0f;
-    }
+    RETURN_ON(!text, 0.0f, "Error: null input for float.\n");
+
     text = easyargs_skip_leading(text);
-    if (text[0] == '\0') {
-        fprintf(stderr, "Error: empty input for float.\n");
-        return 0;
-    }
+
+    RETURN_ON(text[0] == '\0', 0.0f, "Error: empty input for float.\n");
+
     char* end;
     errno = 0;
     float value = strtof(text, &end);
-    if (errno == ERANGE) {
-        fprintf(stderr, "Error: '%s' is out of range for type float.\n", text);
-        return 0.0f;
-    }
-    if (*end != '\0') {
-        fprintf(stderr, "Error: '%s' is not a valid float.\n", text);
-        return 0.0f;
-    }
+
+    RETURN_ON(errno == ERANGE, 0.0f, "Error: '%s' is out of range for type float.\n", text);
+    RETURN_ON(*end != '\0', 0.0f, "Error: '%s' is not a valid float.\n", text);
 
     *ok = 1;
     return value;
@@ -192,26 +157,18 @@ static inline float easyargs_parse_float(const char* text, int* ok) {
 static inline double easyargs_parse_double(const char* text, int* ok) {
     *ok = 0;
 
-    if (!text) {
-        fprintf(stderr, "Error: null input for double.\n");
-        return 0.0;
-    }
+    RETURN_ON(!text, 0.0, "Error: null input for double.\n");
+
     text = easyargs_skip_leading(text);
-    if (text[0] == '\0') {
-        fprintf(stderr, "Error: empty input for double.\n");
-        return 0;
-    }
+
+    RETURN_ON(text[0] == '\0', 0.0, "Error: empty input for double.\n");
+
     char* end;
     errno = 0;
     double value = strtod(text, &end);
-    if (errno == ERANGE) {
-        fprintf(stderr, "Error: '%s' is out of range for type double.\n", text);
-        return 0.0;
-    }
-    if (*end != '\0') {
-        fprintf(stderr, "Error: '%s' is not a valid double.\n", text);
-        return 0.0;
-    }
+
+    RETURN_ON(errno == ERANGE, 0.0, "Error: '%s' is out of range for type double.\n", text);
+    RETURN_ON(*end != '\0', 0.0, "Error: '%s' is not a valid double.\n", text);
 
     *ok = 1;
     return value;
@@ -295,16 +252,11 @@ static inline args_t make_default_args() {
 
 // Parse arguments. Returns 0 if failed.
 static inline int parse_args(int argc, char* argv[], args_t* args) {
-    if (!argc || !argv) {
-        fprintf(stderr, "Internal error: null args or argv.\n");
-        return 0;
-    }
+    RETURN_ON(!argc, 0, "Internal error: null argc.\n");
+    RETURN_ON(!argv, 0, "Internal error: null argv.\n");
 
     // If not enough required arguments
-    if (argc < 1 + REQUIRED_ARG_COUNT) {
-        fprintf(stderr, "Not all required arguments included.\n");
-        return 0;
-    }
+    RETURN_ON(argc < 1 + REQUIRED_ARG_COUNT, 0, "Not all required arguments included.\n");
 
     int ok;
     int i = 1;
@@ -324,10 +276,7 @@ static inline int parse_args(int argc, char* argv[], args_t* args) {
     // Get optional and boolean arguments
     #define OPTIONAL_ARG(type, name, default, flag, label, description, formatter, parser) \
     if (!strcmp(argv[i], flag)) { \
-        if (i + 1 >= argc) { \
-            fprintf(stderr, "Error: option '%s' requires a value.\n", flag); \
-            return 0; \
-        } \
+        RETURN_ON(i + 1 >= argc, 0, "Error: option '%s' requires a value.\n", flag); \
         ok = 0; \
         args->name = (type) parser(argv[++i], &ok); \
         if (!ok) \
@@ -452,6 +401,9 @@ static inline void print_help(char* exec_alias) {
 }
 
 #endif
+
+#undef ERROR
+#undef RETURN_ON
 
 /*
     MIT License
