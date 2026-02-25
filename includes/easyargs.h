@@ -19,6 +19,10 @@
 #include <stdint.h>  // used for SIZE_MAX
 #include <ctype.h>   // used for isspace
 
+#ifndef __cplusplus
+typedef _Bool bool;
+#endif
+
 
 // REQUIRED_ARG(type, name, label, description, parser)
 // label and description should be strings, e.g. "contrast" and "Contrast applied to image"
@@ -247,7 +251,7 @@ static const int BOOLEAN_ARG_COUNT = 0;
 // ARG_T STRUCT
 #define REQUIRED_ARG(type, name, ...) type name;
 #define OPTIONAL_ARG(type, name, ...) type name;
-#define BOOLEAN_ARG(name, ...) _Bool name;
+#define BOOLEAN_ARG(name, ...) bool name;
 // Stores argument values
 typedef struct {
     #ifdef REQUIRED_ARGS
