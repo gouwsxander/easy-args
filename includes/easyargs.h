@@ -230,10 +230,6 @@ static inline double easyargs_parse_double(const char* text, int* ok) {
         fprintf(stderr, "Error: '%s' is out of range for type double.\n", text);
         return 0.0;
     }
-    // if (*end != '\0') {
-    //     fprintf(stderr, "Error: '%s' is not a valid double.\n", text);
-    //     return 0.0;
-    // }
 
     if(!easyargs_at_end(end)){ 
          fprintf(stderr, "Error: '%s' is not a valid double.\n", text); 
@@ -322,7 +318,7 @@ static inline args_t make_default_args() {
 
 
 // Parse arguments. Returns 0 if failed.
-static inline int parse_args(int argc, char* argv[], args_t* args) {
+static inline int parse_args(int argc, char* const argv[], args_t* args) {
     if (!argc || !argv) {
         fprintf(stderr, "Internal error: null args or argv.\n");
         return 0;
@@ -351,6 +347,10 @@ static inline int parse_args(int argc, char* argv[], args_t* args) {
 
     // Get optional and boolean arguments
     #define OPTIONAL_ARG(type, name, default, flag, label, description, formatter, parser) \
+    if(argv[i][0] != '-'){ \
+        fprintf(stderr, "Warning: ignoring invalid argument '%s'\n", argv[i]); \
+        continue; \
+    } \
     if (!strcmp(argv[i], flag)) { \
         if (i + 1 >= argc) { \
             fprintf(stderr, "Error: option '%s' requires a value.\n", flag); \
@@ -389,7 +389,7 @@ static inline int parse_args(int argc, char* argv[], args_t* args) {
 
 
 // Display help string, given command used to launch program, e.g., argv[0]
-static inline void print_help(char* exec_alias) {
+static inline void print_help(const char* exec_alias) {
     // USAGE SECTION
     printf("USAGE:\n");
     printf("    %s ", exec_alias);
