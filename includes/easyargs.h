@@ -20,6 +20,18 @@
 #include <ctype.h>   // used for isspace
 
 
+#ifdef __cplusplus
+    typedef bool easyargs_bool;
+#else
+    #include <stdbool.h>
+    typedef bool easyargs_bool;
+#endif
+
+#ifdef __cplusplus
+
+extern "C" {
+#endif
+
 // REQUIRED_ARG(type, name, label, description, parser)
 // label and description should be strings, e.g. "contrast" and "Contrast applied to image"
 #define REQUIRED_STRING_ARG(name, label, description) REQUIRED_ARG(char*, name, label, description, easyargs_parse_str)
@@ -54,6 +66,11 @@ static inline const char* easyargs_skip_leading(const char *s) {
     if (!s) return s;
     while (isspace((unsigned char)*s)) ++s;
     return s;
+}
+
+static inline int easyargs_at_end(const char* end){
+    end = easyargs_skip_leading(end);
+    return *end == '\0';
 }
 
 // PARSERS
@@ -109,9 +126,9 @@ static inline rettype funcname(const char* text, int* ok) { \
     char* end; \
     errno = 0; \
     unsigned long long val = strtoull(text, &end, 0); \
-    if (*end != '\0') { \
-        fprintf(stderr, "Error: '%s' is not a valid %s.\n", text, typename); \
-        return 0; \
+    if(!easyargs_at_end(end)){ \
+         fprintf(stderr, "Error: '%s' is not a valid %s.\n", text, typename); \
+         return 0; \
     } \
     if (errno == ERANGE || val > (unsigned long long)(maxval)) { \
         fprintf(stderr, "Error: '%s' is out of range for %s.\n", text, typename); \
@@ -143,9 +160,9 @@ static inline rettype funcname(const char* text, int* ok) { \
     char* end; \
     errno = 0; \
     long long val = strtoll(text, &end, 0); \
-    if (*end != '\0') { \
-        fprintf(stderr, "Error: '%s' is not a valid %s.\n", text, typename); \
-        return 0; \
+    if(!easyargs_at_end(end)){ \
+         fprintf(stderr, "Error: '%s' is not a valid %s.\n", text, typename); \
+         return 0; \
     } \
     if (errno == ERANGE || val < (long long)(minval) || val > (long long)(maxval)) { \
         fprintf(stderr, "Error: '%s' is out of range for %s.\n", text, typename); \
@@ -180,10 +197,15 @@ static inline float easyargs_parse_float(const char* text, int* ok) {
         fprintf(stderr, "Error: '%s' is out of range for type float.\n", text);
         return 0.0f;
     }
-    if (*end != '\0') {
-        fprintf(stderr, "Error: '%s' is not a valid float.\n", text);
-        return 0.0f;
-    }
+    // if (*end != '\0') {
+    //     fprintf(stderr, "Error: '%s' is not a valid float.\n", text);
+    //     return 0.0f;
+    // }
+
+    if(!easyargs_at_end(end)){ 
+         fprintf(stderr, "Error: '%s' is not a valid float.\n", text); 
+         return 0;
+    } 
 
     *ok = 1;
     return value;
@@ -208,10 +230,12 @@ static inline double easyargs_parse_double(const char* text, int* ok) {
         fprintf(stderr, "Error: '%s' is out of range for type double.\n", text);
         return 0.0;
     }
-    if (*end != '\0') {
-        fprintf(stderr, "Error: '%s' is not a valid double.\n", text);
-        return 0.0;
-    }
+
+    if(!easyargs_at_end(end)){ 
+         fprintf(stderr, "Error: '%s' is not a valid double.\n", text); 
+         return 0;
+    } 
+
 
     *ok = 1;
     return value;
@@ -247,7 +271,7 @@ static const int BOOLEAN_ARG_COUNT = 0;
 // ARG_T STRUCT
 #define REQUIRED_ARG(type, name, ...) type name;
 #define OPTIONAL_ARG(type, name, ...) type name;
-#define BOOLEAN_ARG(name, ...) _Bool name;
+#define BOOLEAN_ARG(name, ...) easyargs_bool name;
 // Stores argument values
 typedef struct {
     #ifdef REQUIRED_ARGS
@@ -294,7 +318,7 @@ static inline args_t make_default_args() {
 
 
 // Parse arguments. Returns 0 if failed.
-static inline int parse_args(int argc, char* argv[], args_t* args) {
+static inline int parse_args(int argc, char* const argv[], args_t* args) {
     if (!argc || !argv) {
         fprintf(stderr, "Internal error: null args or argv.\n");
         return 0;
@@ -323,6 +347,10 @@ static inline int parse_args(int argc, char* argv[], args_t* args) {
 
     // Get optional and boolean arguments
     #define OPTIONAL_ARG(type, name, default, flag, label, description, formatter, parser) \
+    if(argv[i][0] != '-'){ \
+        fprintf(stderr, "Warning: ignoring invalid argument '%s'\n", argv[i]); \
+        continue; \
+    } \
     if (!strcmp(argv[i], flag)) { \
         if (i + 1 >= argc) { \
             fprintf(stderr, "Error: option '%s' requires a value.\n", flag); \
@@ -361,7 +389,7 @@ static inline int parse_args(int argc, char* argv[], args_t* args) {
 
 
 // Display help string, given command used to launch program, e.g., argv[0]
-static inline void print_help(char* exec_alias) {
+static inline void print_help(const char* exec_alias) {
     // USAGE SECTION
     printf("USAGE:\n");
     printf("    %s ", exec_alias);
@@ -450,6 +478,10 @@ static inline void print_help(char* exec_alias) {
 
     #endif
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
