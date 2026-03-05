@@ -20,6 +20,18 @@
 #include <ctype.h>   // used for isspace
 
 
+#ifdef __cplusplus
+    typedef bool easyargs_bool;
+#else
+    #include <stdbool.h>
+    typedef bool easyargs_bool;
+#endif
+
+#ifdef __cplusplus
+
+extern "C" {
+#endif
+
 // REQUIRED_ARG(type, name, label, description, parser)
 // label and description should be strings, e.g. "contrast" and "Contrast applied to image"
 #define REQUIRED_STRING_ARG(name, label, description) REQUIRED_ARG(char*, name, label, description, easyargs_parse_str)
@@ -263,7 +275,7 @@ static const int BOOLEAN_ARG_COUNT = 0;
 // ARG_T STRUCT
 #define REQUIRED_ARG(type, name, ...) type name;
 #define OPTIONAL_ARG(type, name, ...) type name;
-#define BOOLEAN_ARG(name, ...) _Bool name;
+#define BOOLEAN_ARG(name, ...) easyargs_bool name;
 // Stores argument values
 typedef struct {
     #ifdef REQUIRED_ARGS
@@ -466,6 +478,10 @@ static inline void print_help(char* exec_alias) {
 
     #endif
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
