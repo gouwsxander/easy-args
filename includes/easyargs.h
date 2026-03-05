@@ -56,6 +56,11 @@ static inline const char* easyargs_skip_leading(const char *s) {
     return s;
 }
 
+static inline int easyargs_at_end(const char* end){
+    end = easyargs_skip_leading(end);
+    return *end == '\0';
+}
+
 // PARSERS
 static inline char* easyargs_parse_str(const char* text, int* ok) {
     *ok = 0;
@@ -109,9 +114,9 @@ static inline rettype funcname(const char* text, int* ok) { \
     char* end; \
     errno = 0; \
     unsigned long long val = strtoull(text, &end, 0); \
-    if (*end != '\0') { \
-        fprintf(stderr, "Error: '%s' is not a valid %s.\n", text, typename); \
-        return 0; \
+    if(!easyargs_at_end(end)){ \
+         fprintf(stderr, "Error: '%s' is not a valid %s.\n", text, typename); \
+         return 0; \
     } \
     if (errno == ERANGE || val > (unsigned long long)(maxval)) { \
         fprintf(stderr, "Error: '%s' is out of range for %s.\n", text, typename); \
@@ -143,9 +148,9 @@ static inline rettype funcname(const char* text, int* ok) { \
     char* end; \
     errno = 0; \
     long long val = strtoll(text, &end, 0); \
-    if (*end != '\0') { \
-        fprintf(stderr, "Error: '%s' is not a valid %s.\n", text, typename); \
-        return 0; \
+    if(!easyargs_at_end(end)){ \
+         fprintf(stderr, "Error: '%s' is not a valid %s.\n", text, typename); \
+         return 0; \
     } \
     if (errno == ERANGE || val < (long long)(minval) || val > (long long)(maxval)) { \
         fprintf(stderr, "Error: '%s' is out of range for %s.\n", text, typename); \
@@ -180,10 +185,15 @@ static inline float easyargs_parse_float(const char* text, int* ok) {
         fprintf(stderr, "Error: '%s' is out of range for type float.\n", text);
         return 0.0f;
     }
-    if (*end != '\0') {
-        fprintf(stderr, "Error: '%s' is not a valid float.\n", text);
-        return 0.0f;
-    }
+    // if (*end != '\0') {
+    //     fprintf(stderr, "Error: '%s' is not a valid float.\n", text);
+    //     return 0.0f;
+    // }
+
+    if(!easyargs_at_end(end)){ 
+         fprintf(stderr, "Error: '%s' is not a valid float.\n", text); 
+         return 0;
+    } 
 
     *ok = 1;
     return value;
@@ -208,10 +218,16 @@ static inline double easyargs_parse_double(const char* text, int* ok) {
         fprintf(stderr, "Error: '%s' is out of range for type double.\n", text);
         return 0.0;
     }
-    if (*end != '\0') {
-        fprintf(stderr, "Error: '%s' is not a valid double.\n", text);
-        return 0.0;
-    }
+    // if (*end != '\0') {
+    //     fprintf(stderr, "Error: '%s' is not a valid double.\n", text);
+    //     return 0.0;
+    // }
+
+    if(!easyargs_at_end(end)){ 
+         fprintf(stderr, "Error: '%s' is not a valid double.\n", text); 
+         return 0;
+    } 
+
 
     *ok = 1;
     return value;
