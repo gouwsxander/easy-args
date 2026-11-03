@@ -341,7 +341,7 @@ static inline int parse_args(int argc, char* argv[], args_t* args) {
         continue; \
     }
 
-    for (int i = 1 + REQUIRED_ARG_COUNT; i < argc; i++) {
+    while (i < argc) {
         #ifdef OPTIONAL_ARGS
         OPTIONAL_ARGS
         #endif
@@ -351,6 +351,7 @@ static inline int parse_args(int argc, char* argv[], args_t* args) {
         #endif
 
         fprintf(stderr, "Warning: Ignoring invalid argument '%s'\n", argv[i]);
+        i++; 
     }
 
     #undef OPTIONAL_ARG
