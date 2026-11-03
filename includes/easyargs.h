@@ -341,7 +341,7 @@ static inline int parse_args(int argc, char* argv[], args_t* args) {
         continue; \
     }
 
-    for (int i = 1 + REQUIRED_ARG_COUNT; i < argc; i++) {
+    for (; i < argc; i++) {
         #ifdef OPTIONAL_ARGS
         OPTIONAL_ARGS
         #endif
